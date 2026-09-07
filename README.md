@@ -58,7 +58,7 @@ losing the fact itself — a reasonable thing to isolate — but it means this e
 yet test the case a real threshold-triggered scheduler would eventually hit: the fact itself aging
 out of the window. See "Open questions."
 
-## Results (see METHODOLOGY.md for full detail, task description, and limitations)
+## Results (see METHODOLOGY for full detail, task description, and limitations)
 
 Qwen2.5-0.5B-Instruct, synthetic multi-fact recall (3 named facts, 1 queried per trial),
 `sink_size=6, window_size=24, block_size=8`, n=150 trials per point across 3 seeds:
@@ -70,7 +70,7 @@ Qwen2.5-0.5B-Instruct, synthetic multi-fact recall (3 named facts, 1 queried per
 | 12 | 20.0 | 87.3% | 88.7% | 96.0% |
 | 16 | 28.0 | 90.7% | 91.3% | 95.3% |
 
-(n_cycles=2 excluded — eviction did not reliably trigger at that config; see METHODOLOGY.md.)
+(n_cycles=2 excluded — eviction did not reliably trigger at that config; see METHODOLOGY)
 
 Read with the sample-size caveat in mind (n=150/point, no significance test run yet): re-rotation
 tracks full replay closely, and leave-gap does at least as well as both on every row tested here.
@@ -78,7 +78,7 @@ tracks full replay closely, and leave-gap does at least as well as both on every
 ## Open questions this work does not resolve
 
 - **Full rerotation verification.** Only one `(P, δ)` pair was checked against a fresh-embedding
-  control (see METHODOLOGY.md). A swept range, including large δ and production dtypes
+  control (see METHODOLOGY section). A swept range, including large δ and production dtypes
   (bf16/fp16, not just float32), is still needed.
 - **Facts inside the eviction window.** The pinned-fact design above needs a companion run where
   the target fact itself can be evicted, which is closer to what a real scheduler would do.
@@ -92,7 +92,7 @@ tracks full replay closely, and leave-gap does at least as well as both on every
 ## Repo contents
 
 - `qwen_multi_fact_eviction.ipynb` — the experiment notebook.
-- A future-work sketch of what a vLLM integration might look like is kept in METHODOLOGY.md,
+- A future-work sketch of what a vLLM integration might look like is kept in METHODOLOGY,
   clearly marked as unimplemented and unassessed.
 
 # Methodology, results, and limitations
