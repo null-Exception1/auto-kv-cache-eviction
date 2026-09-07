@@ -96,7 +96,6 @@ tracks full replay closely, and leave-gap does at least as well as both on every
   clearly marked as unimplemented and unassessed.
 
 # Methodology, results, and limitations
-
 ## 1. Motivation
 
 #43374's `evict_session_token_range()` is explicit and caller-driven, motivated by streaming
