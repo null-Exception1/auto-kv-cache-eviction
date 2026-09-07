@@ -35,7 +35,7 @@ which #51948 never claimed to cover.
 
 ## What this is (and isn't)
 
-This is a pilot study, run on one 0.5B model, one hyperparameter configuration, with a synthetic
+This is study run on one 0.5B model, one hyperparameter configuration, with a synthetic
 task, using a hand-rolled reference attention loop rather than vLLM's actual runtime. It is a
 useful data point, not a validated engine design. Concretely, it does **not** yet establish:
 
