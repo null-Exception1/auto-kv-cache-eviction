@@ -237,10 +237,10 @@ itself is eligible for eviction is needed before this generalizes to a real long
   unsolved; not addressed here.
 - Model-scale and config generalization only one 0.5B model and one hyperparameter point tested.
   A `WINDOW_VALUES × CYCLE_VALUES` sweep at fixed `sink_size` (the "front-loaded slice" idea) is a
-  reasonable next step, but hasn't been run yet any claim about `sink_size` being a "flat lever"
+  reasonable next step, but it hasn't been run yet any claim about `sink_size` being a "flat lever"
   should wait until it's actually varied.
 
-## 9. Future-work sketch: what a vLLM integration might look like (unimplemented, unassessed)
+## 9. Future-work sketch: what a vLLM integration might look like 
 
 This is a sketch only no implementation work has been done, and the snippets below have not
 been checked against vLLM's actual scheduler/config APIs.
@@ -260,5 +260,5 @@ been checked against vLLM's actual scheduler/config APIs.
 Sketch config surface: `--experimental-autonomous-text-eviction-threshold`,
 `--experimental-text-eviction-window`. Sketch scheduler hook: a threshold check in
 `_schedule_default()` that calls `evict_session_token_range()` with `apply_rotation=False`. None
-of this has been prototyped against vLLM internals; treat it as a placeholder for a later phase,
+of this has been prototyped against vLLM internals. Treat it as a placeholder for a later phase,
 not a design that's been validated.
