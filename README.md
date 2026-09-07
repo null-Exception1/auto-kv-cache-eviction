@@ -47,7 +47,7 @@ Upon hitting the maximum sequence threshold, the engine identifies the target to
 
 ### Strategy B (Corrected): Renumber & Re-Rotate
 Instead of recomputing the hidden states from scratch, this strategy retains the hidden states already resident in the K-cache, but executes custom math operations to offset the absolute position values.
-* **Mechanics:** Given an eviction depth of $delta tokens, the surviving keys are counter-rotated by applying a negative phase shift $-delta through the vector space using the core Rotary Position Embedding transformation.
+* **Mechanics:** Given an eviction depth of $\delta$ tokens, the surviving keys are counter-rotated by applying a negative phase shift $-\delta$ through the vector space using the core Rotary Position Embedding transformation.
 * **Mathematical Vector Implementation:**
 ```python
 def apply_rope(x, positions, freqs):
@@ -74,11 +74,13 @@ def apply_rope(x, positions, freqs):
     return torch.cat([out1, out2], dim=-1)
 ```
 * **Execution:** For a surviving cache block slice, the key tensors undergo mutation at eviction runtime:
-  $$K_{corrected} = apply\_rope(K_{cached}, -\delta, FREQS)$$
+  $$
+  K_{\text{corrected}} = \text{apply\_rope}(K_{\text{cached}}, -\delta, \text{FREQS})
+  $$
 
 ### Strategy B (Uncorrected): Leave Gap (Zero-Kernel Mutation)
 This strategy relies on an engineering shortcut. The memory allocator drops the physical pointers to the blocks targeted for eviction, freeing up physical allocation slots, but the remaining keys are left completely unmodified.
-* **Mechanics:** The surviving keys keep their original absolute position metrics ($P_{initial}$). No computational adjustment is performed down the pipeline. 
+* **Mechanics:** The surviving keys keep their original absolute position metrics ($P_{\text{initial}}$). No computational adjustment is performed down the pipeline. 
 * **Impact:** Creates a permanent structural position index gap between the attention sinks and the active sliding window context. It requires absolutely zero GPU overhead and introduces zero execution latency.
 
 ---
@@ -88,8 +90,8 @@ This strategy relies on an engineering shortcut. The memory allocator drops the 
 To measure the absolute accuracy behaviors of these strategies under strict isolation, the framework was deployed using the following deterministic test environment:
 
 * **Model Foundation:** `Qwen/Qwen2.5-0.5B-Instruct`
-  * **Architecture Details:** Grouped-Query Attention (GQA), 24 active Transformer layers, 14 attention heads total with 2 dedicated Key-Value (KV) heads, hidden dimension of 64 channels per head ($Head Dim=64$).
-  * **Positional Constant:** `rope_theta` value configured at $1,000,000.0$.
+  * **Architecture Details:** Grouped-Query Attention (GQA), 24 active Transformer layers, 14 attention heads total with 2 dedicated Key-Value (KV) heads, hidden dimension of 64 channels per head ($\text{Head Dim}=64$).
+  * **Positional Constant:** `rope_theta` value configured at $1000000.0$.
 * **Evaluation Workflow Task (Multi-Fact Recall):** A synthetic multi-fact recall pipeline. Every trial begins by injecting a static sequence of randomized attention sinks. Next, 3 unique named fact strings are written into the cache (e.g., *"Alice's secret number is 4."*). 
 * **Eviction Cycle Mechanics:** High-frequency adversarial filler token ingestion loops are pushed through the system. The sequence runs for $N$ eviction cycles, filling a configurable history depth. At the query terminal, the model is prompted to recall a specific fact from the original context (e.g., *"Alice's secret number is [ ]"*), and evaluation metrics check if the argmax logprob matches the true integer target.
 * **Hyperparameter Matrix Bounds:**
@@ -130,19 +132,23 @@ To guarantee that the accuracy deficit observed during the re-rotation strategy 
 ### The Precision Proof
 The script verified the exact behavior of applying dual-pass position offsets against a control tensor embedded directly at its true terminal position index. Given an initial position index $P$ and an eviction depth deletion value $\delta$, the verification calculated:
 
-$$\text{Rerotated Value} = \text{apply\_rope}(\text{apply\_rope}(T, P), -\delta)$$
-$$\text{Fresh Control Value} = \text{apply\_rope}(T, P - \delta)$$
+$$
+\text{Rerotated Value} = \text{apply\_rope}(\text{apply\_rope}(T, P), -\delta)
+$$
+$$
+\text{Fresh Control Value} = \text{apply\_rope}(T, P - \delta)
+$$
 
-The maximum absolute difference ($	ext{Max Abs Diff}$) was measured across all hidden states and channels using `torch.float32` precision parameters.
+The maximum absolute difference ($\text{Max Abs Diff}$) was measured across all hidden states and channels using `torch.float32` precision parameters.
 
 ### Vector Verification Array
 * **Case 1 ($P=40, \delta=8$):** $\text{Max Abs Diff} = 4.7683715 \times 10^{-7}$
 * **Case 2 ($P=100, \delta=16$):** $\text{Max Abs Diff} = 4.7683715 \times 10^{-7}$
-* **Case 3 ($P=512, \delta=64$):** $	ext{Max Abs Diff} = 5.9604645 	imes 10^{-7}$
-* **Case 4 ($P=2048, \delta=1024$):** $	ext{Max Abs Diff} = 7.1525574 	imes 10^{-7}$
+* **Case 3 ($P=512, \delta=64$):** $\text{Max Abs Diff} = 5.9604645 \times 10^{-7}$
+* **Case 4 ($P=2048, \delta=1024$):** $\text{Max Abs Diff} = 7.1525574 \times 10^{-7}$
 
 ### The Scientific Conclusion
-The vector drift tracks right against the native `float32` machine epsilon limit ($\sim 1.19 	imes 10^{-7}$) scaled by standard vector-norm variables. Even during major sequence fast-forwards ($\delta = 1024$), there is no accumulation of calculation drift or precision loss. 
+The vector drift tracks right against the native `float32` machine epsilon limit ($\sim 1.19 \times 10^{-7}$) scaled by standard vector-norm variables. Even during major sequence fast-forwards ($\delta = 1024$), there is no accumulation of calculation drift or precision loss. 
 
 This provides a definitive structural conclusion: **the accuracy loss seen in active re-rotation is a physical property of attention-propagation dynamics.** When you shift the absolute position indices of historical tokens, you disrupt how the attention layers interact with relative spatial layout, whereas leaving the absolute position indices anchored to their true creation points preserves crucial structural tracking within the attention matrix.
 
