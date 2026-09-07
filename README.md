@@ -15,8 +15,8 @@ scheduler-side `SingleTypeKVCacheManager.evict_and_compact` path, and the
 the RoPE re-rotation kernel as future work.
 
 It also engages with [#51948](https://github.com/vllm-project/vllm/issues/51948) (@nvbfalk), which
-independently reaches the opposite default for a different model class — evict without
-re-rotating, leaving position gaps in place — and scopes that finding to multimodal RoPE (M-RoPE),
+independently reaches the opposite default for a different model class; evict without
+re-rotating, leaving position gaps in place and scopes that finding to multimodal RoPE (M-RoPE),
 explicitly stating it was measured on that model class.
 
 **What this adds:** a small empirical test of whether "gaps are benign" also holds outside M-RoPE,
@@ -28,8 +28,9 @@ implementation.
 **In scope:** text sessions using standard (1D) RoPE (Qwen2.5, Llama 3, Mistral-style models).
 
 **Explicitly out of scope:** M-RoPE / multimodal sessions. #51948's result was measured on that
-model class; this work does not extend or contest that finding on its own terms — it only asks
-whether the *same design choice* (leave gaps, don't re-rotate) also holds for 1D RoPE text models,
+model class; this work does not extend or contest that finding on its own terms.
+
+It only asks whether the *same design choice* (leave gaps, don't re-rotate) also holds for 1D RoPE text models,
 which #51948 never claimed to cover.
 
 ## What this is (and isn't)
