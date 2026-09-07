@@ -1,6 +1,6 @@
 # Autonomous threshold-triggered KV eviction for text sessions a preliminary study
 
-**Status: research note / pilot replication, to be worked on as a future RFC for vllm** This repository reports a small,
+**Status: research note / pilot replication, to be worked on as a future RFC for vllm**: This repository reports a small,
 single-model empirical comparison of three KV-cache eviction correction schemes on a synthetic
 text recall task. It is not yet a proposal for a vLLM engine change see "What this is (and
 isn't)" below.
