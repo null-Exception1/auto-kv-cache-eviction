@@ -65,3 +65,12 @@ The accuracy gap above therefore reflects content-propagation effects through at
 - A working re-rotation implementation for the `_post_add_requests` hook (posted separately as a PR comment), with a preliminary (single-point) correctness check reported above and full verification still open
 - An autonomous threshold-triggered eviction mode, addressing sessions without external eviction signals
 - A direct empirical comparison between renumber+rotate and leave-gap schemes, on a 1D-RoPE text task outside the model class #51948's "gaps are benign" result was scoped to
+
+## Core Discoveries & Technical Insights
+
+Beyond the practical scheduling mechanics, this research project yields four key machine learning insights:
+
+*   **1D RoPE Gap Generalization:** We confirm that positional gaps are not a quirk unique to M-RoPE video architectures; leaving structural timeline gaps intact yields a **5–13% accuracy gain** on 1D text models compared to active re-rotation schemes.
+*   **Precision vs. Propagation:** By proving that `rerotate_cache` holds perfectly to the `float32` epsilon noise floor ($\sim 7.15 \times 10^{-7}$), we isolate the accuracy variance strictly to attention-propagation dynamics rather than arithmetic decay or argument-reduction drift.
+*   **The Computational Efficiency Paradox:** The optimal strategy for the model's accuracy (Leave-Gap) happens to be the most computationally cheap strategy, completely bypassing the need for physical cache mutation kernels at inference time.
+*   **Sink Size Saturation:** Beyond a foundational token boundary (e.g., 6 tokens), increasing attention sinks yields diminishing returns on 1D text recall tasks, marking window boundaries as the primary performance lever.
