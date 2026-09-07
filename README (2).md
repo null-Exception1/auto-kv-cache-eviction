@@ -109,13 +109,14 @@ $$\text{Rerotated Value} = \text{apply\_rope}(\text{apply\_rope}(T, P), -\delta)
 
 $$\text{Fresh Control Value} = \text{apply\_rope}(T, P - \delta)$$
 
-The maximum absolute difference ($\text{Max Abs Diff}$) was measured across all hidden states and channels using `torch.float32` precision parameters.
+The maximum absolute difference (`Max Abs Diff`) was measured across all hidden states and channels using `torch.float32` precision parameters.
+
 
 ### Vector Verification Array
-* **Case 1 ($P=40, \delta=8$):** $\text{Max Abs Diff} = 4.7683715 \times 10^{-7}$
-* **Case 2 ($P=100, \delta=16$):** $\text{Max Abs Diff} = 4.7683715 \times 10^{-7}$
-* **Case 3 ($P=512, \delta=64$):** $\text{Max Abs Diff} = 5.9604645 \times 10^{-7}$
-* **Case 4 ($P=2048, \delta=1024$):** $\text{Max Abs Diff} = 7.1525574 \times 10^{-7}$
+* **Case 1 ($P=40, \delta=8$):** `Max Abs Diff` = $4.7683715 \times 10^{-7}$
+* **Case 2 ($P=100, \delta=16$):** `Max Abs Diff` = $4.7683715 \times 10^{-7}$
+* **Case 3 ($P=512, \delta=64$):** `Max Abs Diff` = $5.9604645 \times 10^{-7}$
+* **Case 4 ($P=2048, \delta=1024$):** `Max Abs Diff` = $7.1525574 \times 10^{-7}$
 
 ### The Scientific Conclusion
 The vector drift tracks right against the native `float32` machine epsilon limit ($\sim 1.19 \times 10^{-7}$) scaled by standard vector-norm variables. Even during major sequence fast-forwards ($\delta = 1024$), there is no accumulation of calculation drift or precision loss. 
