@@ -6,7 +6,7 @@ While historical engine optimizations scope positional anomalies strictly to Mul
 
 ---
 
-## 1. Architectural Motivation & Problem Framing
+## 1. Architectural Motivation
 
 In long-running transformer text contexts (such as autonomous multi-turn agents, iterative code-generation pipelines, or persistent chat servers), context window saturation poses a severe hardware capacity limitation. As the key-value cache expands, it consumes finite GPU memory, leading to allocation failures or forcing massive batch context swaps that degrade throughput.
 
@@ -22,7 +22,7 @@ This project formally benchmarked the computation-accuracy trade-offs of this ac
 
 ---
 
-## 2. Theoretical Paradigms & Mathematical Mechanics
+## 2. Theoretical Paradigms
 
 This research evaluates three distinct strategies for handling the structural absolute positions of tokens retained in memory following a historical eviction event. 
 
@@ -133,12 +133,10 @@ To guarantee that the accuracy deficit observed during the re-rotation strategy 
 ### The Precision Proof
 The script verified the exact behavior of applying dual-pass position offsets against a control tensor embedded directly at its true terminal position index. Given an initial position index $P$ and an eviction depth deletion value $\delta$, the verification calculated:
 
-$$
-\text{Rerotated Value} = \text{apply\_rope}(\text{apply\_rope}(T, P), -\delta)
-$$
-$$
-\text{Fresh Control Value} = \text{apply\_rope}(T, P - \delta)
-$$
+$$\text{Rerotated Value} = \mathtt{apply\_rope}(\mathtt{apply\_rope}(T, P), -\delta)$$
+
+$$\text{Fresh Control Value} = \mathtt{apply\_rope}(T, P - \delta)$$
+
 
 The maximum absolute difference ($\text{Max Abs Diff}$) was measured across all hidden states and channels using `torch.float32` precision parameters.
 
