@@ -76,7 +76,7 @@ def apply_rope(x, positions, freqs):
 * **Execution:** For a surviving cache block slice, the key tensors undergo mutation at eviction runtime:
 
 $$
-K_{\text{corrected}} = \text{apply\_rope}(K_{\text{cached}}, -\delta, \text{FREQS})
+K_{\text{corrected}} = \mathtt{apply\_rope}(K_{\text{cached}}, -\delta, \mathtt{FREQS})
 $$
 
 ### Strategy B (Uncorrected): Leave Gap (Zero-Kernel Mutation)
