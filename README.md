@@ -74,9 +74,10 @@ def apply_rope(x, positions, freqs):
     return torch.cat([out1, out2], dim=-1)
 ```
 * **Execution:** For a surviving cache block slice, the key tensors undergo mutation at eviction runtime:
-  $$
-  K_{\text{corrected}} = \text{apply\_rope}(K_{\text{cached}}, -\delta, \text{FREQS})
-  $$
+
+$$
+K_{\text{corrected}} = \text{apply\_rope}(K_{\text{cached}}, -\delta, \text{FREQS})
+$$
 
 ### Strategy B (Uncorrected): Leave Gap (Zero-Kernel Mutation)
 This strategy relies on an engineering shortcut. The memory allocator drops the physical pointers to the blocks targeted for eviction, freeing up physical allocation slots, but the remaining keys are left completely unmodified.
