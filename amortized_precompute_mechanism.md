@@ -357,6 +357,3 @@ citations.
 | BFloat16/RoPE precision interaction | arXiv 2411.13476 | Confirmed — matches the accumulation-with-context-length and first-token-contribution claims in Claim C almost verbatim. |
 
 ---
-
-*Section 6 is the actual to-do list. Nothing past Phase 1 is worth building until the central
-tension in Claim B is resolved one way or the other.*
