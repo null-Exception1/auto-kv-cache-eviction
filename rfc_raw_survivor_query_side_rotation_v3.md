@@ -165,4 +165,3 @@ A future vLLM-facing version of this RFC should:
 
 ---
 
-*Written up so the reasoning survives past tonight — not ready to post anywhere yet. Section 5 is the actual to-do list.*
