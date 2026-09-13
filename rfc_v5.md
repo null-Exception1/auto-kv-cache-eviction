@@ -1,7 +1,6 @@
 # [RFC Draft]: Raw-Survivor Storage with Query-Side Rotation for KV Cache Eviction
 
-**Status:** pre-draft / not yet posted. Section 1 (the mechanism) and §2's core compounding-drift result are settled. **Section 5 (originally an open-questions list) has been updated with results: all 7 original questions are answered, and latency/precision findings are settled pending only end-to-end (not isolated) latency measurement and CUDA graph capture. Real-model recall accuracy (§5.new) is confirmed.**
-
+**Status:** pre-draft / not yet posted. Section 1 (the mechanism) and §2's core compounding-drift result are settled. §2.1 is a follow-up sweep, not yet fully rigorous (see its own caveats), that surfaces a separate magnitude-driven error term the original §2 test didn't exercise — treat §2 as settled only for the specific claim it measured (compounding, fixed P), not as a complete precision picture. **Section 5 (originally an open-questions list) has been updated with results: all 7 original questions are answered, and latency/precision findings are settled pending only end-to-end (not isolated) latency measurement and CUDA graph capture. Real-model recall accuracy (§5.new) has been re-run against the fixed harness and confirmed for n_cycles 2–32. n_cycles=64 hasn't been tested yet**
 **Author:** null-Exception1
 **Repo:** https://github.com/null-Exception1/auto-kv-cache-eviction
 
@@ -186,7 +185,7 @@ Real K/Q tensors, softmax against 6 distractors, 10 trials at the worst measured
 
 Full P×evict_n grid (0-450, step 50, 5 draws/cell, fp32): the error floor is driven by **evict_n magnitude specifically**, not by P and not by target position (P−evict_n) — confirmed by cases where identical |target position| values produce wildly different error magnitudes depending on the P/evict_n split, and evict_n=0 always producing exactly zero error regardless of P.
 
-### 5.new
+### 5.new — Real-model recall accuracy: confirmed for n_cycles 2–32, n_cycles=64 not yet tested
 
 Beyond the 7 original questions, a real per-layer implementation (Qwen2.5-0.5B-Instruct, fp32, manual forward pass) was built to test RSQR's actual recall accuracy against two baselines (continuous re-rotation, leave-gap) on a multi-fact needle-in-haystack task. An initial run (n=60/cell, n_cycles 2-32) showed RSQR trailing continuous re-rotation by a bounded 13-22 points while clearly beating leave-gap, with the gap over leave-gap widening as eviction pressure increased.
 
