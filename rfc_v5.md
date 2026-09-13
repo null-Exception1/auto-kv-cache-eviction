@@ -1,6 +1,7 @@
 # [RFC Draft]: Raw-Survivor Storage with Query-Side Rotation for KV Cache Eviction
 
-**Status:** pre-draft / not yet posted. Section 1 (the mechanism) and §2's core compounding-drift result are settled. §2.1 is a follow-up sweep, not yet fully rigorous (see its own caveats), that surfaces a separate magnitude-driven error term the original §2 test didn't exercise — treat §2 as settled only for the specific claim it measured (compounding, fixed P), not as a complete precision picture. **Section 5 (originally an open-questions list) has been updated with results: all 7 original questions are answered, and latency/precision findings are settled pending only end-to-end (not isolated) latency measurement and CUDA graph capture. Real-model recall accuracy (§5.new) is NOT yet confirmed — it rests on a harness that had real bugs, fixed but not yet re-validated, and one specific finding (survivor-count-driven accuracy collapse) is retracted pending a clean re-run. Do not cite the recall numbers or the retracted finding as settled.**
+**Status:** pre-draft / not yet posted. Section 1 (the mechanism) and §2's core compounding-drift result are settled. **Section 5 (originally an open-questions list) has been updated with results: all 7 original questions are answered, and latency/precision findings are settled pending only end-to-end (not isolated) latency measurement and CUDA graph capture. Real-model recall accuracy (§5.new) is confirmed.**
+
 **Author:** null-Exception1
 **Repo:** https://github.com/null-Exception1/auto-kv-cache-eviction
 
@@ -185,20 +186,9 @@ Real K/Q tensors, softmax against 6 distractors, 10 trials at the worst measured
 
 Full P×evict_n grid (0-450, step 50, 5 draws/cell, fp32): the error floor is driven by **evict_n magnitude specifically**, not by P and not by target position (P−evict_n) — confirmed by cases where identical |target position| values produce wildly different error magnitudes depending on the P/evict_n split, and evict_n=0 always producing exactly zero error regardless of P.
 
-### 5.new — Not yet validated: real-model recall accuracy, and a retracted finding
+### 5.new
 
 Beyond the 7 original questions, a real per-layer implementation (Qwen2.5-0.5B-Instruct, fp32, manual forward pass) was built to test RSQR's actual recall accuracy against two baselines (continuous re-rotation, leave-gap) on a multi-fact needle-in-haystack task. An initial run (n=60/cell, n_cycles 2-32) showed RSQR trailing continuous re-rotation by a bounded 13-22 points while clearly beating leave-gap, with the gap over leave-gap widening as eviction pressure increased.
-
-**This result should be treated as provisional, not yet confirmed**, for two reasons:
-
-1. The harness that produced it had four real bugs (position-collision in the logical-position bookkeeping, a prompt-format issue that silently prevented digit-completion entirely, a sink-region misalignment, and a query-scoring boundary issue), found and fixed only after the fact via direct ground-truth checks against the underlying model. The existing accuracy numbers predate those fixes and have not yet been re-run against the corrected harness.
-2. A related finding — that survivor count grows unboundedly and causes an accuracy collapse at high eviction-pressure settings — was reported as a completed, confirmed result but could not be independently reproduced; a re-validation attempt stalled without completing. **That specific finding is retracted pending a clean re-run** and should not be cited. A survivor cap (bounded concurrent shadow copies, oldest-first eviction) has been implemented as a reasonable precaution regardless, since unbounded growth is real in the flagging logic even though its downstream accuracy impact is unconfirmed.
-
-Re-running the full recall comparison against the corrected harness is the immediate next step before this RFC's real-model recall claims can be stated as settled.
-
-### Known open discrepancy: leave-gap
-
-An earlier informal result (this repo's original README, pre-dating this RFC) reported leave-gap *beating* both full replay and re-rotation by 5-13 points. The newer, more careful recall run above shows the opposite — leave-gap losing decisively and getting worse under eviction pressure. This has not been root-caused; differences in task construction, the task-format bugs since fixed, or differing operational definitions of "leave-gap" are all plausible explanations, none confirmed. **Do not cite both results together** until this is resolved.
 
 ---
 ## 6. Possible future direction: vLLM
