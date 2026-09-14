@@ -80,12 +80,9 @@ for i in range(10):
     rotated_then_corrected = apply_rope(rotated_then_corrected, torch.tensor([float(-evict_n)], device=device), FREQS)
 ```
 
-*(measurement table omitted here as in the original draft)*
-
 **Caveats on this follow-up sweep — most since resolved, see §5:**
 Whether the floor traces to `P` magnitude, `evict_n` magnitude, or target position specifically is answered in §5.7 (it's `evict_n`, not `P`, not target position). Whether this diff range actually moves attention scores is answered in §5.6 (it doesn't, at the tested scale — invisible past softmax). Two gaps remain genuinely open: **only float32 was tested** (production dtypes bf16/fp16 remain unchecked — no longer planned as a priority given fp32 is the target dtype for this mechanism, but worth flagging for anyone deploying at lower precision), and **content was synthetic** (`torch.randn`), not real forward-pass activations (§5.new's real-model recall run provides softer corroboration on this front, but doesn't directly re-measure the tensor-level diff on real activations).
 
-**Apparent tension with this author's own prior result — resolved: not the same experiment.** The companion README (`auto-kv-cache-eviction`) originally reported renumber+re-rotate underperforming leave-gap by 5–13 points across every eviction-cycle count tested (its §4). A later, independent real-model recall run (this RFC's §5.new, Qwen2.5-0.5B-Instruct, n=60/cell) found the opposite: leave-gap losing decisively to both continuous re-rotation and RSQR, with the gap widening under eviction pressure. Direct code comparison between the two harnesses shows they are not measuring the same thing: the newer harness introduces a **pinned-token category** absent from the original — query-suffix tokens are protected from eviction and position drift entirely, in both the corrected and uncorrected arms — and the original harness has an independent, confirmed **eviction-counting bug** (an eviction occurring during the shared prefix phase, common by construction, was silently never added to either arm's reported `n_evictions`; fixed in the newer harness). The counting bug is a fixed offset and does not plausibly explain the *widening* pattern seen under increasing eviction pressure; the pinning difference is the more likely driver of that shape, since it shields exactly the tokens most load-bearing for the answer from the failure mode leave-gap exposes, and does so increasingly as more drift accumulates elsewhere. This has not been isolated via a controlled ablation (re-running leave-gap with pinning toggled off, all else matched) — that remains future work if a direct comparison against the original README numbers is ever needed. **Neither the original README numbers nor the newer run's leave-gap numbers should be cited as measuring the same underlying question; they were produced by structurally different harnesses.** This RFC's raw-survivor mechanism does not depend on which harness's leave-gap number is "right" — it still renumbers (once, exactly, per survivor) rather than leaving gaps, so the open geometry-vs-arithmetic question from the paragraph below is unaffected by this resolution.
 
 ---
 
@@ -94,10 +91,10 @@ Whether the floor traces to `P` magnitude, `evict_n` magnitude, or target positi
 ### 3.1 Query-side vs. key-side correction
 
 **Key-side corrected** (standard):
-$$A_{m,n} = \text{Softmax}\left(\frac{(R_m Q_m)\cdot(R_{n-evicted}K_n)^T}{\sqrt{d}}\right)$$
+$$A_{m,n} = \text{Softmax}\left(\frac{(R_m Q_m)\cdot(R_{n-\text{evicted}}K_n)^T}{\sqrt{d}}\right)$$
 
 **Query-side corrected** (this design):
-$$A_{m,n} = \text{Softmax}\left(\frac{(R_{m-evicted}Q_m)\cdot(R_n K_n)^T}{\sqrt{d}}\right)$$
+$$A_{m,n} = \text{Softmax}\left(\frac{(R_{m-\text{evicted}}Q_m)\cdot(R_n K_n)^T}{\sqrt{d}}\right)$$
 
 RoPE attention scores depend only on relative angular displacement between query and key positions, so shifting the eviction correction from the key side to the query side computes an equivalent relative distance. This identity itself isn't new — it's the standard justification for RoPE as a relative encoding, and MiniPIC already exploits it for prefix caching. What's specific to this proposal is using it to make eviction a pure bookkeeping operation rather than a tensor-modifying one.
 
