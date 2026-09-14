@@ -236,18 +236,28 @@ Real K/Q tensors, softmax against 6 distractors, 10 trials at the worst measured
 
 Full P×evict_n grid (0-450, step 50, 5 draws/cell, fp32): the error floor is driven by **evict_n magnitude specifically**, not by P and not by target position (P−evict_n) — confirmed by cases where identical |target position| values produce wildly different error magnitudes depending on the P/evict_n split, and evict_n=0 always producing exactly zero error regardless of P.
 
-### 5.new — Real-model recall accuracy: confirmed for n_cycles 2–32
+### 5.new — Real-model recall accuracy: RSQR trails corrected at low eviction counts, converges by n_cycles≈32
 
-Beyond the 7 original questions, a real per-layer implementation (Qwen2.5-0.5B-Instruct, fp32, manual forward pass) was built to test RSQR's actual recall accuracy against two baselines (continuous re-rotation, leave-gap) on a multi-fact needle-in-haystack task. An initial run (n=60/cell, n_cycles 2-32) showed RSQR trailing continuous re-rotation by a bounded 13-22 points while clearly beating leave-gap, with the gap over leave-gap widening as eviction pressure increased.
+Beyond the 7 original questions, a real per-layer implementation (Qwen2.5-0.5B-Instruct, fp32, manual forward pass) was built to test RSQR's actual recall accuracy against two baselines (continuous re-rotation, leave-gap) on a multi-fact needle-in-haystack task. RSQR clearly and consistently beats leave-gap at every tested point. Its relationship to continuous re-rotation ("corrected") is more specific than "a small bounded gap," and is worth stating precisely:
 
-| n_cycles | B corrected (acc) | B uncorrected (acc) | C RSQR (acc) | B corrected (logp) | B uncorrected (logp) | C RSQR (logp) |
+A paired significance test (McNemar's test on same-trial correct/incorrect outcomes, n=60 exercised trials per `n_cycles` point, plus a paired bootstrap 95% CI on the accuracy difference) shows RSQR trails corrected by a **statistically significant** margin at low eviction counts (`n_cycles` 2, 4, 6, 12 — all p < 0.05, bootstrap CIs excluding zero), the gap narrows and becomes borderline at `n_cycles`=16 (p=0.07), and by `n_cycles`=32 the gap is **statistically indistinguishable from zero** (+1.7%, p=1.00, bootstrap 95% CI [-5.0%, +10.0%]).
+
+| n_cycles | n (exercised) | B corrected (acc) | C RSQR (acc) | diff | McNemar p | Bootstrap 95% CI |
 |---:|---:|---:|---:|---:|---:|---:|
-| 2  | 93.3% | 93.3% | 80.0% | -1.149 | -1.149 | -1.171 |
-| 4  | 93.3% | 61.7% | 70.0% | -1.012 | -1.314 | -1.255 |
-| 6  | 91.7% | 53.3% | 73.3% | -1.002 | -1.394 | -1.198 |
-| 12 | 100.0% | 28.3% | 78.3% | -1.022 | -1.752 | -1.367 |
-| 16 | 96.7% | 35.0% | 86.7% | -0.943 | -1.691 | -1.588 |
-| 32 | 93.3% | 18.3% | 95.0% | -1.004 | -1.664 | -1.064 |
+| 2  | 60 | 93.3% | 80.0% | -13.3% | 0.039* | [-25.0%, -3.3%] |
+| 4  | 60 | 93.3% | 70.0% | -23.3% | 0.001* | [-36.7%, -11.7%] |
+| 6  | 60 | 91.7% | 73.3% | -18.3% | 0.007* | [-30.0%, -6.7%] |
+| 12 | 60 | 100.0% | 78.3% | -21.7% | <0.001* | [-31.7%, -11.7%] |
+| 16 | 60 | 96.7% | 86.7% | -10.0% | 0.070 | [-20.0%, -1.7%] |
+| 32 | 60 | 93.3% | 95.0% | +1.7% | 1.000 | [-5.0%, +10.0%] |
+
+*p < 0.05, McNemar's test with continuity correction.
+
+**Reading this honestly:** RSQR is not yet a demonstrated drop-in replacement for continuous re-rotation across the board — at low eviction counts it measurably underperforms it. What the data does support is a specific convergence claim: as eviction pressure increases, RSQR's accuracy deficit shrinks and disappears by `n_cycles`≈32. A confirming point at `n_cycles`≈48 would strengthen confidence that this is a genuine convergence trend rather than a fluke at exactly 32, and is planned as follow-up rather than assumed here.
+
+(A separate `n_cycles`=64 run was attempted but discarded — a Colab compute-quota interruption corrupted that sweep's output, producing spurious rows. It is not included above and should not be read as a data point pending a clean re-run.)
+
+Full per-trial logprob detail (all three strategies) is retained in the accompanying trial log for anyone who wants to dig into the confidence margins beyond raw accuracy.
 
 ---
 ## 6. Possible future direction: vLLM
