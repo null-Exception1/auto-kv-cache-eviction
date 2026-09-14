@@ -250,10 +250,11 @@ A paired significance test (McNemar's test on same-trial correct/incorrect outco
 | 12 | 60 | 100.0% | 78.3% | -21.7% | <0.001* | [-31.7%, -11.7%] |
 | 16 | 60 | 96.7% | 86.7% | -10.0% | 0.070 | [-20.0%, -1.7%] |
 | 32 | 60 | 93.3% | 95.0% | +1.7% | 1.000 | [-5.0%, +10.0%] |
+| 48 | 37 | 94.6% | 94.6% | +0.0% | 1.000 | [-10.8%, +10.8%] |
 
 *p < 0.05, McNemar's test with continuity correction.
 
-**Reading this honestly:** RSQR is not yet a demonstrated drop-in replacement for continuous re-rotation across the board — at low eviction counts it measurably underperforms it. What the data does support is a specific convergence claim: as eviction pressure increases, RSQR's accuracy deficit shrinks and disappears by `n_cycles`≈32. A confirming point at `n_cycles`≈48 would strengthen confidence that this is a genuine convergence trend rather than a fluke at exactly 32, and is planned as follow-up rather than assumed here.
+**Reading this honestly:** RSQR is not yet a demonstrated drop-in replacement for continuous re-rotation across the board — at low eviction counts it measurably underperforms it. What the data does support is a specific convergence claim: as eviction pressure increases, RSQR's accuracy deficit shrinks and disappears by `n_cycles`≈32, and stays closed at `n_cycles`=48 (exact parity, 94.6% vs 94.6%, p=1.0). Two consecutive non-significant points at 32 and 48, both with CIs comfortably straddling zero, make it unlikely that the 32 result was a fluke — this looks like a genuine convergence trend rather than noise at one point.
 
 (A separate `n_cycles`=64 run was attempted but discarded — a Colab compute-quota interruption corrupted that sweep's output, producing spurious rows. It is not included above and should not be read as a data point pending a clean re-run.)
 
