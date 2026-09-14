@@ -156,6 +156,13 @@ Two dummy-tensor microbenchmarks (isolated rotation cost, T4, fp32):
 - **Batched vs. continuous, across stream length** (n_steps 100→5000): RSQR beats continuous per-step rotation by 3.7-4.6x, tracking rotation call count (~8x fewer calls) rather than total tokens rotated — consistent with RAP (arXiv 2602.02599)'s finding that RoPE itself is under 1% of inference latency, so the win is architectural (fewer kernel launches), not computational.
 - **Bump severity, across eviction frequency** (`evict_every` 2→64): speedup climbs *monotonically* from 1.78x to 7.00x as eviction events get rarer/bigger — the advantage doesn't erode under more frequent evictions, it grows as they get less frequent. A separate sweep varying survivor count alone (`survivor_delta` 2→64, eviction frequency held fixed) found no cliff or systematic degradation either, just run-to-run measurement noise consistent with shared Colab hardware.
 
+```text
+n_steps=  100 | A:   18.260ms (calls=  93, tokens=  2550) | B:    4.918ms (calls=  12, tokens=   624) | speedup=3.71x
+n_steps=  500 | A:   96.594ms (calls= 493, tokens= 13550) | B:   24.875ms (calls=  62, tokens= 15624) | speedup=3.88x
+n_steps= 1000 | A:  225.015ms (calls= 993, tokens= 27304) | B:   54.257ms (calls= 125, tokens= 63000) | speedup=4.15x
+n_steps= 5000 | A: 1244.572ms (calls=4993, tokens=137304) | B:  271.469ms (calls= 625, tokens=1565000) | speedup=4.58x
+```
+
 **The one caveat that applies to everything in §5.1 and §3.5's latency discussion below: this is an isolated rotation-cost microbenchmark, not end-to-end inference latency.** It excludes real model/attention/scheduler overhead and hasn't been tested with CUDA graph capture (§5.5) or on hardware beyond a single T4. The mechanism-level conclusion (batching reduces kernel-launch count, and that reduction dominates) is well-supported; the specific multipliers above are a rotation-only measurement and should not be cited as an inference-serving speedup number without that follow-up.
 
 ### 5.2 Bump severity vs. window size/Δ — CLOSED (folded into 5.1 above)
