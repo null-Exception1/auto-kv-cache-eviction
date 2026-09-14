@@ -186,6 +186,15 @@ Full P×evict_n grid (0-450, step 50, 5 draws/cell, fp32): the error floor is dr
 
 Beyond the 7 original questions, a real per-layer implementation (Qwen2.5-0.5B-Instruct, fp32, manual forward pass) was built to test RSQR's actual recall accuracy against two baselines (continuous re-rotation, leave-gap) on a multi-fact needle-in-haystack task. An initial run (n=60/cell, n_cycles 2-32) showed RSQR trailing continuous re-rotation by a bounded 13-22 points while clearly beating leave-gap, with the gap over leave-gap widening as eviction pressure increased.
 
+| n_cycles | B corrected (acc) | B uncorrected (acc) | C RSQR (acc) | B corrected (logp) | B uncorrected (logp) | C RSQR (logp) |
+|---:|---:|---:|---:|---:|---:|---:|
+| 2  | 93.3% | 93.3% | 80.0% | -1.149 | -1.149 | -1.171 |
+| 4  | 93.3% | 61.7% | 70.0% | -1.012 | -1.314 | -1.255 |
+| 6  | 91.7% | 53.3% | 73.3% | -1.002 | -1.394 | -1.198 |
+| 12 | 100.0% | 28.3% | 78.3% | -1.022 | -1.752 | -1.367 |
+| 16 | 96.7% | 35.0% | 86.7% | -0.943 | -1.691 | -1.588 |
+| 32 | 93.3% | 18.3% | 95.0% | -1.004 | -1.664 | -1.064 |
+
 ---
 ## 6. Possible future direction: vLLM
 
