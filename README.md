@@ -157,10 +157,10 @@ Two dummy-tensor microbenchmarks (isolated rotation cost, T4, fp32):
 - **Bump severity, across eviction frequency** (`evict_every` 2→64): speedup climbs *monotonically* from 1.78x to 7.00x as eviction events get rarer/bigger — the advantage doesn't erode under more frequent evictions, it grows as they get less frequent. A separate sweep varying survivor count alone (`survivor_delta` 2→64, eviction frequency held fixed) found no cliff or systematic degradation either, just run-to-run measurement noise consistent with shared Colab hardware.
 
 ```text
-n_steps=  100 | A:   18.260ms (calls=  93, tokens=  2550) | B:    4.918ms (calls=  12, tokens=   624) | speedup=3.71x
-n_steps=  500 | A:   96.594ms (calls= 493, tokens= 13550) | B:   24.875ms (calls=  62, tokens= 15624) | speedup=3.88x
-n_steps= 1000 | A:  225.015ms (calls= 993, tokens= 27304) | B:   54.257ms (calls= 125, tokens= 63000) | speedup=4.15x
-n_steps= 5000 | A: 1244.572ms (calls=4993, tokens=137304) | B:  271.469ms (calls= 625, tokens=1565000) | speedup=4.58x
+n_steps=  100 | A:   28.065ms (calls=  93, tokens=  2550) | B:    7.683ms (calls=  12, tokens=   624) | speedup=3.65x
+n_steps=  500 | A:   95.234ms (calls= 493, tokens= 13550) | B:   25.932ms (calls=  62, tokens= 15624) | speedup=3.67x
+n_steps= 1000 | A:  215.492ms (calls= 993, tokens= 27304) | B:   49.574ms (calls= 125, tokens= 63000) | speedup=4.35x
+n_steps= 5000 | A: 1028.762ms (calls=4993, tokens=137304) | B:  289.254ms (calls= 625, tokens=1565000) | speedup=3.56x
 ```
 
 **The one caveat that applies to everything in §5.1 and §3.5's latency discussion below: this is an isolated rotation-cost microbenchmark, not end-to-end inference latency.** It excludes real model/attention/scheduler overhead and hasn't been tested with CUDA graph capture (§5.5) or on hardware beyond a single T4. The mechanism-level conclusion (batching reduces kernel-launch count, and that reduction dominates) is well-supported; the specific multipliers above are a rotation-only measurement and should not be cited as an inference-serving speedup number without that follow-up.
@@ -168,6 +168,52 @@ n_steps= 5000 | A: 1244.572ms (calls=4993, tokens=137304) | B:  271.469ms (calls
 ### 5.2 Bump severity vs. window size/Δ — CLOSED (folded into 5.1 above)
 
 Answered as part of the latency work: no evidence of a severity- or Δ-driven latency cliff across either tested axis.
+
+```text
+evict_every=  2  A=422.713ms  B=258.143ms  speedup=1.64x  calls A/B=1997/999
+evict_every=  4  A=374.126ms  B=163.893ms  speedup=2.28x  calls A/B=1993/499
+evict_every=  8  A=422.879ms  B=98.663ms  speedup=4.29x  calls A/B=1985/249
+evict_every= 16  A=405.768ms  B=72.580ms  speedup=5.59x  calls A/B=1969/124
+evict_every= 32  A=384.146ms  B=59.916ms  speedup=6.41x  calls A/B=1937/61
+evict_every= 64  A=357.595ms  B=53.006ms  speedup=6.75x  calls A/B=1873/30
+
+======================================================================
+Sweep 1 summary -- does speedup hold as bump frequency/severity changes?
+======================================================================
+  speedup range: 1.64x - 6.75x
+  monotonic trend: non-decreasing (speedup holds or grows as evict_every increases)
+
+survivor_delta=  2  A=390.113ms  B=100.552ms  speedup=3.88x  B_tokens_rotated=62250
+survivor_delta=  4  A=424.307ms  B=100.821ms  speedup=4.21x  B_tokens_rotated=124500
+survivor_delta=  8  A=418.649ms  B=99.305ms  speedup=4.22x  B_tokens_rotated=249000
+survivor_delta= 16  A=383.645ms  B=105.507ms  speedup=3.64x  B_tokens_rotated=249000
+survivor_delta= 32  A=371.634ms  B=120.736ms  speedup=3.08x  B_tokens_rotated=249000
+survivor_delta= 64  A=412.074ms  B=98.804ms  speedup=4.17x  B_tokens_rotated=249000
+
+======================================================================
+Sweep 2 summary -- does more survivor accumulation erode RSQR's speedup?
+======================================================================
+  speedup range: 3.08x - 4.22x
+
+======================================================================
+SANITY CHECK -- do the two arms actually differ in call count?
+======================================================================
+  n_steps=  100: OK -- A made 93 calls, B made 12 calls (7.8x more calls in A)
+  n_steps=  500: OK -- A made 493 calls, B made 62 calls (8.0x more calls in A)
+  n_steps= 1000: OK -- A made 993 calls, B made 125 calls (7.9x more calls in A)
+  n_steps= 5000: OK -- A made 4993 calls, B made 625 calls (8.0x more calls in A)
+
+======================================================================
+SUMMARY -- does the RSQR-vs-continuous speedup grow, shrink, or
+stay flat as stream length (n_steps) increases?
+======================================================================
+  n_steps=  100: RSQR (Arm B) faster, 3.65x  (A calls=93, B calls=12)
+  n_steps=  500: RSQR (Arm B) faster, 3.67x  (A calls=493, B calls=62)
+  n_steps= 1000: RSQR (Arm B) faster, 4.35x  (A calls=993, B calls=125)
+  n_steps= 5000: RSQR (Arm B) faster, 3.56x  (A calls=4993, B calls=625)
+
+Trend: speedup stays roughly FLAT across n_steps -- the per-call overhead difference dominates, independent of stream length.
+```
 
 ### 5.3 Drift-scaling sanity check — CLOSED
 
